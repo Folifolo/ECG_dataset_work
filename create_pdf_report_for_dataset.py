@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*
+
 # получаем сюда файл name_pkl с датасетом и генерим для него репорт name_report
 
 import os
@@ -11,7 +13,7 @@ import pickle as pkl
 import cv2
 import shutil
 
-def create_report(dset_2d_pkl, name_report):
+def create_report(dset_2d_pkl, name_report, labels_names):
     if os.path.exists(name_report):
         os.remove(name_report)
 
@@ -32,7 +34,9 @@ def create_report(dset_2d_pkl, name_report):
     for entry_i in range(len(new_dict['xs'])):
         print (str(entry_i))
         pic = new_dict['xs'][entry_i]
-        description = new_dict['ys'][entry_i]
+        description =""
+        for label_name in labels_names:
+            description.append(label_name + " - " + str(new_dict[label_name][entry_i]))
         img_name = os.path.join(new_folder, str(entry_i)+".png" )
         cv2.imwrite(img_name, pic)
         img = _make_image_for_report(img_name, width=10 * cm)
@@ -48,6 +52,7 @@ def create_report(dset_2d_pkl, name_report):
                             topMargin=72, bottomMargin=18)
     doc.build(story)
     print("generated:    "+ name_report)
+
 
 
 def _make_text_to_report(text):
@@ -67,9 +72,12 @@ def _make_line():
 
 if __name__ == "__main__":
     name_report = "report.pdf"          # название отчетика
-    dset_name_2d = "2d_healthy.pkl"     # файл с датасетом
+    dset_name_2d = "2d_healthy.pkl"     # файл с датасетом - 2d
 
-    create_report(dset_name_2d, name_report)
+    labels_names = ['ys']
+    # labels_names = ['y1', 'y2','y3'] # какие лейблы есть для каждой картинки
+
+    create_report(dset_name_2d, name_report, labels_names)
 
     shutil.rmtree('temp')  # удаляем папку с промежуточным слжебым мусором
 
