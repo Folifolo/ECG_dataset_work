@@ -14,6 +14,7 @@ import cv2
 import shutil
 
 def create_report(dset_2d_pkl, name_report, labels_names):
+
     if os.path.exists(name_report):
         os.remove(name_report)
 
