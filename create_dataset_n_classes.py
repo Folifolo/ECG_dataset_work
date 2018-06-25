@@ -2,6 +2,7 @@
 #
 # создать датасет: на вход - n диагнозов, на выход датасет вида [x, y] где len(y[i]) = n
 import os
+import numpy as np
 import pickle as pkl
 import pyedflib
 
@@ -17,10 +18,13 @@ def _get_signal_from_file(filename_edf):
         channel = 0  # будем пока рассматривать только один канал - нулевой
 
         f = pyedflib.EdfReader(filename_edf)
-        signal = f.readSignal(chn=channel)
+        n = f.signals_in_file
+        signals = np.zeros((n, f.getNSamples()[0]))
+        for i in np.arange(n):
+            signals[i, :] = f.readSignal(i)
         f._close()
         del f
-        return signal
+        return signals
     except Exception as  exeption:
         return None
 
@@ -52,7 +56,7 @@ def generate_dataset(list_of_diagnoses, folder_with_raw_dataset, name_pkl):
 
     assert len(x) == len(y)
 
-    dict = {'x': x, 'y': y, 'summary': 'датасет n-мерного диагноза и одномерный, без картинок'}
+    dict = {'x': x, 'y': y, 'summary': 'датасет n-мерного диагноза - электро-ось'}
     outfile = open(name_pkl, 'wb')
     pkl.dump(dict, outfile)
     outfile.close()
@@ -66,9 +70,7 @@ if __name__ == "__main__":
     folder_with_raw_dataset = 'C:\\ecg'  # путь к папке с исходными файлами .edf, .json
     # списки диагнозов копипастить из visualisation.ipnb (т.е. запустить его выполняться и посмотреть, у каких списков/диагнозов хорошая представленность получится)
     list_of_diagnoses = ['vertical', 'horizontal', 'normal', 'deviation_left', 'deviation_right']
-    name_for_dataset_file = 'ELECTRIC_AXIS_1d.pkl'
-
-
+    name_for_dataset_file = 'ELECTRIC_AXIS.pkl'
 
     folder_name = 'all_datasets_here'
     if not os.path.isdir(folder_name):
