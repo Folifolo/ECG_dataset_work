@@ -48,7 +48,27 @@ def get_pandas_dataframe(folder):
     dframe = pd.DataFrame(list_of_dicts)
     return dframe
 
+def get_n_most_freq_names(n):
+    folder_with_files = 'C:\\ecg'  # путь к папке с исходными файлами .edf, .json
+    df = get_pandas_dataframe(folder_with_files)
+
+    df.loc['Total'] = df.sum()
+
+    df = df.T
+
+    df = df.iloc[:, [-1]]
+    df = df[pd.to_numeric(df['Total'], errors='coerce').notnull()]
+    df = df.sort_values(by=['Total']).tail(n)
+    print(tabulate(df, headers='keys', tablefmt='psql'))
+    names = list(df.index.values)
+    return names
+
 if __name__ == "__main__":
     folder_with_files = 'C:\\ecg'  # путь к папке с исходными файлами .edf, .json
     df = get_pandas_dataframe(folder_with_files)
-    print (tabulate(df, headers='keys', tablefmt='psql'))
+    print(tabulate(df, headers='keys', tablefmt='psql'))
+
+    print(get_n_most_freq_names(n=10))
+
+
+

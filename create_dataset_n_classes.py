@@ -6,7 +6,9 @@ import numpy as np
 import pickle as pkl
 import pyedflib
 
-from raw_dataset_to_pandas_frame import get_pandas_dataframe
+from raw_dataset_to_pandas_frame import (
+    get_pandas_dataframe, get_n_most_freq_names
+)
 
 def _get_signal_from_file(filename_edf):
     """
@@ -69,8 +71,9 @@ def generate_dataset(list_of_diagnoses, folder_with_raw_dataset, name_pkl):
 if __name__ == "__main__":
     folder_with_raw_dataset = 'C:\\ecg'  # путь к папке с исходными файлами .edf, .json
     # списки диагнозов копипастить из visualisation.ipnb (т.е. запустить его выполняться и посмотреть, у каких списков/диагнозов хорошая представленность получится)
-    list_of_diagnoses = ['vertical', 'horizontal', 'normal', 'deviation_left', 'deviation_right']
-    name_for_dataset_file = 'ELECTRIC_AXIS.pkl'
+    #list_of_diagnoses = ['normal']
+    list_of_diagnoses = get_n_most_freq_names(n=10)
+    name_for_dataset_file = 'TOP_10.pkl'
 
     folder_name = 'all_datasets_here'
     if not os.path.isdir(folder_name):
