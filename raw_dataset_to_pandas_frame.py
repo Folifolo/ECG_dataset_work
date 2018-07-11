@@ -7,6 +7,7 @@ import os
 import json
 import pandas as pd
 from tabulate import tabulate
+import matplotlib.pyplot as plt
 
 def _get_entries_as_list_of_dicts(folder):
     """
@@ -61,6 +62,8 @@ def get_n_most_freq_names(n):
     df = df.sort_values(by=['Total']).tail(n)
     print(tabulate(df, headers='keys', tablefmt='psql'))
     names = list(df.index.values)
+    df.plot.bar()
+    plt.savefig("bar_plot_distrubutioon.png")
     return names
 
 if __name__ == "__main__":
