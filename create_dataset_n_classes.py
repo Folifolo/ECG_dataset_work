@@ -17,8 +17,6 @@ def _get_signal_from_file(filename_edf):
     :return: сигнал с нулевого отведения (т.е. 1 из 12 штук, в форме вектора)
     """
     try:
-        channel = 0  # будем пока рассматривать только один канал - нулевой
-
         f = pyedflib.EdfReader(filename_edf)
         n = f.signals_in_file
         signals = np.zeros((n, f.getNSamples()[0]))
