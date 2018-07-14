@@ -20,66 +20,72 @@ from create_dataset_n_classes import (
 folder_with_raw_dataset = 'C:\\ecg'  # путь к папке с исходными файлами .edf, .json
 folder_name = 'all_datasets_fish'
 
-def _get_subframe_with_removed(nessesary_indicators, nessesary_zeros):
-    df_selected = _get_subframe_with_ilnesses(nessesary_indicators, others_zeros=False)
-    criteria = []
-    for diagnos_name in nessesary_zeros:
-        criteria.append(diagnos_name + ' == 0')
 
+def _get_criteria( nessesary_indicators=None, nessesary_zeros=None):
     str_query = ''
+    criteria = []
+    if nessesary_indicators is not None:
+        for diagnos_name in nessesary_indicators:
+            criteria.append(diagnos_name + ' == 1')
+    if nessesary_zeros is not None:
+        for diagnos_name in nessesary_zeros:
+            criteria.append(diagnos_name + ' == 0')
+
     for i in range(len(criteria)):
         str_query = str_query + criteria[i]
         if i < len(criteria) - 1:
             str_query = str_query + " & "
-    df_selected = df_selected.query(str_query)
-    return df_selected
+    return str_query
 
-def _get_subframe_with_ilnesses(list_of_diagnoses,  others_zeros):
-    """
-
-    :param list_of_diagnoses: это те диагнозы, на против которого у пациента должны быть нули
-    :param pkl_name:
-    :param others_zeros: если тру, то во всех остальных диагнозах должен быть ноль (т.е. он болен ТОЛЬКО этими диагнозами и больше никакими)
-    :return:
-    """
-    # выделяем только такие х-ы, у которых одновременно единица в диагнозе во всех болезнях из списка
-
-    df = get_pandas_dataframe(folder_with_raw_dataset)
-
+def _append_diversity_column(df, nessesary_indicators):
+    if nessesary_indicators is None:
+        nessesary_indicators = []
     col_list = list(df)
-    for name in list_of_diagnoses:
+    for name in nessesary_indicators:
         col_list.remove(name)
     col_list.remove('edf_file')
     col_list.remove('case_id')
     df['diversity'] = df[col_list].sum(axis=1)
+    return df
 
-    criteria = []
-    for diagnos_name in list_of_diagnoses:
-        criteria.append(diagnos_name + ' == 1')
+def _get_subframe(nessesary_indicators, nessesary_zeros):
+    """
+    вернет только те, где nessesary_indicators единицы, а nessesary_zeros нули (остальные как угодно)
+    :param nessesary_indicators:
+    :param nessesary_zeros:
+    :return:
+    """
+    df = get_pandas_dataframe(folder_with_raw_dataset)
 
-    str_query = ''
-    for i in range(len(criteria)):
-        str_query=str_query + criteria[i]
-        if i < len(criteria) -1:
-            str_query= str_query+ " & "
+    df = _append_diversity_column(df, nessesary_indicators)
+    str_query = _get_criteria(nessesary_indicators=nessesary_indicators,
+                              nessesary_zeros=nessesary_zeros)
+
     df_selected = df.query(str_query)
 
-    #print(col_list)
-    if others_zeros:
-        df_selected = df_selected.query('diversity == 0')
-
-    #print(tabulate(df_selected, headers='keys', tablefmt='psql'))
+    # print(tabulate(df_selected, headers='keys', tablefmt='psql'))
     return df_selected
 
-def get_ill_xy(nessesary_indicators, pkl_name, zero_indicators=None):
-    if zero_indicators == None:
-        df_selected = _get_subframe_with_ilnesses(nessesary_indicators, others_zeros=False)
-    else:
-        df_selected = _get_subframe_with_removed(nessesary_indicators, zero_indicators)
-    df_selected = df_selected.sort_values(by=['diversity'], ascending=True) # первыми будут самые чистые
+def _get_subframe_ONLY(nessesary_indicators):
+    df_selected = _get_subframe(nessesary_indicators, nessesary_zeros=None)
+
+    df_selected = df_selected.query('diversity == 0')
+    # print(tabulate(df_selected, headers='keys', tablefmt='psql'))
+    return df_selected
+
+
+
+def make_dataset(pkl_name, nessesary_indicators=None, zero_indicators=None, mode_only=False):
     x = []
-    y = []
     errors = []
+    if mode_only == True:
+        df_selected = _get_subframe_ONLY(nessesary_indicators)
+    else:
+        df_selected = _get_subframe(nessesary_indicators=nessesary_indicators, nessesary_zeros=zero_indicators)
+        df_selected = df_selected.sort_values(by=['diversity'], ascending=True) # первыми будут самые чистые
+        y = []
+
+
     for index, row in df_selected.iterrows():
         edf_file = row['edf_file']
         signal = _get_signal_from_file(edf_file)
@@ -87,10 +93,15 @@ def get_ill_xy(nessesary_indicators, pkl_name, zero_indicators=None):
             errors.append(edf_file)
             continue
         x.append(signal)
-        y.append(row['diversity'])
-    assert len(x) == len(y)
-    print("нашлось больных этим + другим: " + str(len(x)))
-    dict = {'x': x, 'div': y, 'summary': nessesary_indicators}
+        if mode_only is False:
+            y.append(row['diversity'])
+    if mode_only is False:
+        assert len(x) == len(y)
+        dict = {'x': x, 'div': y, 'summary': str( nessesary_indicators) + "BUT NOT " + str(zero_indicators)}
+    else:
+        dict = {'x': x, 'summary': nessesary_indicators}
+
+
     outfile = open(pkl_name, 'wb')
     pkl.dump(dict, outfile)
     outfile.close()
@@ -98,47 +109,34 @@ def get_ill_xy(nessesary_indicators, pkl_name, zero_indicators=None):
     if (len(errors) != 0):
         print("не удалось добавить в датасет файлы: " + str(errors))
 
-def get_ill_x(nessesary_indicators, pkl_name):
-    df_selected = _get_subframe_with_ilnesses(nessesary_indicators, others_zeros=True)
-    x = []
-    errors = []
-    for index, row in df_selected.iterrows():
-        edf_file = row['edf_file']
-        signal = _get_signal_from_file(edf_file)
-        if signal is None:
-            errors.append(edf_file)
-            continue
-        x.append(signal)
 
-    print("нашлось больных ТОЛЬКО этим: " + str(len(x)))
-    dict = {'x': x, 'summary': nessesary_indicators}
-    outfile = open(pkl_name, 'wb')
-    pkl.dump(dict, outfile)
-    outfile.close()
-    print("датасет сохранен в файл")
-    if (len(errors) != 0):
-        print("не удалось добавить в датасет файлы: " + str(errors))
 
 def make_2_dsets(nessesary_indicators, name):
     if not os.path.isdir(folder_name):
         os.mkdir(folder_name)
     pkl_name_only = os.path.join(folder_name, "ONLY_"+name)
     pkl_name_not_only = os.path.join(folder_name, name)
-    get_ill_xy(nessesary_indicators,  pkl_name_not_only)
-    get_ill_x(nessesary_indicators, pkl_name_only)
+    make_dataset(pkl_name_not_only, nessesary_indicators=nessesary_indicators, zero_indicators=None)
+    make_dataset(pkl_name_only, nessesary_indicators=nessesary_indicators, mode_only=True)
 
 def make_n_dsets(one_group, second_group, name):
     if not os.path.isdir(folder_name):
         os.mkdir(folder_name)
     pkl_name_zn = os.path.join(folder_name, "ZN(both)_"+name)
-    pkl_name_z_no_n = os.path.join(folder_name, "z_no_n_" + name)
-    pkl_name_n_no_z = os.path.join(folder_name, "n_no_z_" + name)
+    pkl_name_z_no_n = os.path.join(folder_name, "Z_no_n_" + name)
+    pkl_name_n_no_z = os.path.join(folder_name, "N_no_z_" + name)
+    pkl_name_no_zn = os.path.join(folder_name, "No_zn(both)_" + name)
     print("!!!---" +str(one_group) + "---NOT: "+ str(second_group))
-    get_ill_xy(nessesary_indicators=one_group, zero_indicators=second_group, pkl_name=pkl_name_z_no_n)
+    make_dataset(nessesary_indicators=one_group, zero_indicators=second_group, pkl_name=pkl_name_z_no_n)
+
     print("!!!---" + str(second_group) + "---NOT: " + str(one_group))
-    get_ill_xy(nessesary_indicators=second_group, zero_indicators=one_group, pkl_name=pkl_name_n_no_z)
+    make_dataset(nessesary_indicators=second_group, zero_indicators=one_group, pkl_name=pkl_name_n_no_z)
+
     print("!!!------BOTH: " + str(second_group+one_group))
-    get_ill_xy(nessesary_indicators=second_group+one_group, zero_indicators=None, pkl_name=pkl_name_zn)
+    make_dataset(nessesary_indicators=second_group+one_group, zero_indicators=None, pkl_name=pkl_name_zn)
+
+    print("!!!------NOT-BOTH: " + str(second_group + one_group))
+    make_dataset(nessesary_indicators=None, zero_indicators=second_group + one_group, pkl_name=pkl_name_no_zn)
 
 
 if __name__ == "__main__":
@@ -150,5 +148,5 @@ if __name__ == "__main__":
     nessesary_indicators3 = ['normal', 'regular_normosystole', 'extension_left_atrium']
     nessesary_indicators4 = ['extension_left_atrium', 'left_ventricular_hypertrophy'] #0
 
-    #make_2_dsets(nessesary_indicators4, name)
-    make_n_dsets(['extension_left_atrium'], ['left_ventricular_hypertrophy'], name)
+    make_2_dsets(nessesary_indicators1, name)
+    #make_n_dsets(['extension_left_atrium'], ['left_ventricular_hypertrophy'], name)
