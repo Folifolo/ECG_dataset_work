@@ -67,11 +67,11 @@ def generate_dataset(list_of_diagnoses, folder_with_raw_dataset, name_pkl):
 
 
 if __name__ == "__main__":
-    folder_with_raw_dataset = 'C:\\ecg'  # путь к папке с исходными файлами .edf, .json
+    folder_with_raw_dataset = 'C:\\ecg_new'  # путь к папке с исходными файлами .edf, .json
     # списки диагнозов копипастить из visualisation.ipnb (т.е. запустить его выполняться и посмотреть, у каких списков/диагнозов хорошая представленность получится)
     #list_of_diagnoses = ['normal']
-    list_of_diagnoses = get_n_most_freq_names(n=15)
-    name_for_dataset_file = 'TOP_15.pkl'
+    list_of_diagnoses = get_n_most_freq_names(n=25)
+    name_for_dataset_file = 'TOP_15(new).pkl'
 
     folder_name = 'all_datasets_here'
     if not os.path.isdir(folder_name):

@@ -17,7 +17,7 @@ from create_dataset_n_classes import (
     _get_signal_from_file
 )
 
-folder_with_raw_dataset = 'C:\\ecg'  # путь к папке с исходными файлами .edf, .json
+folder_with_raw_dataset = 'C:\\ecg_new'  # путь к папке с исходными файлами .edf, .json
 folder_name = 'all_datasets_fish'
 
 
@@ -140,7 +140,7 @@ def make_n_dsets(one_group, second_group, name):
 
 
 if __name__ == "__main__":
-    name = 'healthy.pkl'
+    name = 'healthy2.pkl'
 
 
     nessesary_indicators1 = ['normal', 'regular_normosystole']
@@ -148,5 +148,5 @@ if __name__ == "__main__":
     nessesary_indicators3 = ['normal', 'regular_normosystole', 'extension_left_atrium']
     nessesary_indicators4 = ['extension_left_atrium', 'left_ventricular_hypertrophy'] #0
 
-    make_2_dsets(nessesary_indicators1, name)
-    #make_n_dsets(['extension_left_atrium'], ['left_ventricular_hypertrophy'], name)
+    #make_2_dsets(nessesary_indicators1, name)
+    make_n_dsets(['normal', 'regular_normosystole'], [], name)
