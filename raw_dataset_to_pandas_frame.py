@@ -49,8 +49,7 @@ def get_pandas_dataframe(folder):
     dframe = pd.DataFrame(list_of_dicts)
     return dframe
 
-def get_n_most_freq_names(n):
-    folder_with_files = 'C:\\ecg'  # путь к папке с исходными файлами .edf, .json
+def get_n_most_freq_names(n, folder_with_files= 'C:\\ecg_new' ):
     df = get_pandas_dataframe(folder_with_files)
 
     df.loc['Total'] = df.sum()
